@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ES2020",
+    "moduleResolution": "bundler",
+    "rootDir": "frontend/src",
+    "outDir": "frontend/dist",
+    "strict": true
+  },
+  "include": ["frontend/src/**/*.ts"]
+}

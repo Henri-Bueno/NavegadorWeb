@@ -1,0 +1,20 @@
+{
+  "name": "navegador",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node ./server",
+    "dev": "node --watch ./server"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "express": "^5.3.0"
+  }
+}
