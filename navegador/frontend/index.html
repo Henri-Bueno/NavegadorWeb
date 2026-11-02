@@ -10,14 +10,14 @@
   </head>
   <body>
     <div class="browser">
-
-      
       <header class="topbar">
         <a class="brand" href="/" aria-label="NavegadorWeb - início">
           <span class="brand-mark" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none">
               <circle cx="12" cy="12" r="9" />
-              <path d="M3.5 9h17M3.5 15h17M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18" />
+              <path
+                d="M3.5 9h17M3.5 15h17M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"
+              />
             </svg>
           </span>
           <span>Navegador<span class="brand-accent">Web</span></span>
@@ -26,20 +26,37 @@
 
       <nav class="toolbar" aria-label="Barra de navegação">
         <div class="navigation-controls" aria-label="Controles visuais">
-          <button class="icon-button" type="button" aria-label="Voltar" title="Voltar">
+          <button
+            class="icon-button"
+            type="button"
+            aria-label="Voltar"
+            title="Voltar"
+          >
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="m15 18-6-6 6-6" />
             </svg>
           </button>
-          <button class="icon-button" type="button" aria-label="Avançar" title="Avançar">
+          <button
+            class="icon-button"
+            type="button"
+            aria-label="Avançar"
+            title="Avançar"
+          >
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="m9 18 6-6-6-6" />
             </svg>
           </button>
-          <button class="icon-button" type="button" aria-label="Atualizar" title="Atualizar">
+          <button
+            class="icon-button"
+            type="button"
+            aria-label="Atualizar"
+            title="Atualizar"
+          >
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M20 7v5h-5M4 17v-5h5" />
-              <path d="M5.6 9a7 7 0 0 1 11.6-2L20 12M4 12l2.8 5a7 7 0 0 0 11.6-2" />
+              <path
+                d="M5.6 9a7 7 0 0 1 11.6-2L20 12M4 12l2.8 5a7 7 0 0 0 11.6-2"
+              />
             </svg>
           </button>
         </div>
@@ -75,13 +92,17 @@
               </svg>
               Histórico
             </h2>
-            <p class="empty-state">Suas páginas recentes aparecerão aqui.</p>
+            <div id="history-list" class="history-list">
+              <p class="empty-state">Suas páginas recentes aparecerão aqui.</p>
+            </div>
           </section>
 
           <section class="sidebar-section" aria-labelledby="favorites-heading">
             <h2 class="section-heading" id="favorites-heading">
               <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z" />
+                <path
+                  d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z"
+                />
               </svg>
               Favoritos
             </h2>

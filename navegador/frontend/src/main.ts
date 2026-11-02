@@ -1,20 +1,92 @@
-// Ponto de entrada do navegador; funcionalidades serão adicionadas posteriormente.
-const frame = document.getElementById("browser-frame") as HTMLIFrameElement | null;
+// Ponto de entrada do navegador
+import { MyNode, history } from "./history.js";
+
+// Obtém referências aos elementos do DOM
+const frame = document.getElementById(
+  "browser-frame",
+) as HTMLIFrameElement | null;
 const input = document.getElementById("url-input") as HTMLInputElement | null;
-const button = document.getElementById("navigate-button") as HTMLButtonElement | null;
+const button = document.getElementById(
+  "navigate-button",
+) as HTMLButtonElement | null;
 
+// Obtém referência à lista de histórico
+const historyList = document.getElementById("history-list");
+
+// Função auxiliar para renderizar o histórico de visitas
+function renderHistory(): void {
+  if (historyList === null) return;
+
+  // Busca todas as visitas
+  const visits = history.getAll();
+
+  // Limpa a lista visual atual
+  historyList.innerHTML = "";
+
+  // Se não houver visitas, mostra a mensagem vazia
+  if (visits.length === 0) {
+    const emptyMessage = document.createElement("p");
+    emptyMessage.className = "empty-state";
+    emptyMessage.textContent = "Suas páginas recentes aparecerão aqui.";
+
+    historyList.appendChild(emptyMessage);
+    return;
+  }
+
+  // Cria um elemento visual para cada visita
+  visits.forEach((visit) => {
+    const item = document.createElement("div");
+    item.className = "history-item";
+    item.textContent = visit.title || visit.url;
+
+    historyList.appendChild(item);
+  });
+}
+
+// Função auxiliar para obter o domínio da página a partir da URL
+function getPageTitle(url: string): string {
+  try {
+    const domain = new URL(url).hostname.replace("www.", "");
+    return domain.charAt(0).toUpperCase() + domain.slice(1);
+  } catch {
+    return url;
+  }
+}
+
+let currentVisit: MyNode | null = null;
+
+// Adiciona um listener de evento ao botão de navegação
 if (frame !== null && input !== null && button !== null) {
-    button.addEventListener("click", () => {
-        let url = input.value.trim();
+  frame.addEventListener("load", () => {
+    if (currentVisit === null) return;
 
-        if (url === "") {
-            return;
-        }
+    try {
+      const title = frame.contentDocument?.title;
 
-        if (!url.startsWith("http://") && !url.startsWith("https://")) {
-            url = "https://" + url;
-        }
+      if (title) {
+        currentVisit.title = title;
+        renderHistory();
+      }
+    } catch {
+      // O navegador bloqueou o acesso ao conteúdo.
+    }
+  });
 
-        frame.src = url;
-    });
+  button.addEventListener("click", () => {
+    let url = input.value.trim();
+
+    if (url === "") return;
+
+    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+      url = "https://" + url;
+    }
+
+    const visit = new MyNode(url, getPageTitle(url));
+
+    history.add(visit);
+    currentVisit = visit;
+
+    frame.src = url;
+    renderHistory();
+  });
 }
