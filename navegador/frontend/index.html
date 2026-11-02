@@ -95,6 +95,38 @@
             <div id="history-list" class="history-list">
               <p class="empty-state">Suas páginas recentes aparecerão aqui.</p>
             </div>
+            <template id="history-item-template">
+              <div class="history-item">
+                <img class="history-item-icon" alt="" aria-hidden="true" />
+                <span class="history-item-title"></span>
+                <div class="history-item-actions">
+                  <button
+                    class="history-action-button"
+                    type="button"
+                    aria-label="Adicionar aos favoritos"
+                    title="Adicionar aos favoritos"
+                    data-action="favorite"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path
+                        d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z"
+                      />
+                    </svg>
+                  </button>
+                  <button
+                    class="history-action-button history-delete-button"
+                    type="button"
+                    aria-label="Excluir do histórico"
+                    title="Excluir do histórico"
+                    data-action="delete"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M4 7h16M10 11v6m4-6v6M5 7l1 14h12l1-14M9 7V4h6v3" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </template>
           </section>
 
           <section class="sidebar-section" aria-labelledby="favorites-heading">

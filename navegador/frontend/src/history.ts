@@ -5,12 +5,14 @@ class MyNode {
     url: string;
     title: string;
     next: MyNode | null;
+    icon: string;
 
     constructor(url: string, title: string = "") {
         this.url = url;
         this.title = title;
         this.id = MyNode.nextId++;
         this.next = null;
+        this.icon = "";
     }
 }
 
@@ -58,6 +60,28 @@ class List{
         }
         return response;
     }
+
+    moveToStart(id: number): boolean {
+    if (this.start === null || this.start.id === id) {
+        return false;
+    }
+
+    let previous: MyNode = this.start;
+    let current: MyNode | null = this.start.next;
+
+    while (current !== null && current.id !== id) {
+        previous = current;
+        current = current.next;
+    }
+
+    if (current === null) return false;
+
+    previous.next = current.next;
+    current.next = this.start;
+    this.start = current;
+
+    return true;
+}
 
     }
 

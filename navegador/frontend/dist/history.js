@@ -4,6 +4,7 @@ class MyNode {
         this.title = title;
         this.id = MyNode.nextId++;
         this.next = null;
+        this.icon = "";
     }
 }
 MyNode.nextId = 1;
@@ -44,6 +45,23 @@ class List {
             current_node = current_node.next;
         }
         return response;
+    }
+    moveToStart(id) {
+        if (this.start === null || this.start.id === id) {
+            return false;
+        }
+        let previous = this.start;
+        let current = this.start.next;
+        while (current !== null && current.id !== id) {
+            previous = current;
+            current = current.next;
+        }
+        if (current === null)
+            return false;
+        previous.next = current.next;
+        current.next = this.start;
+        this.start = current;
+        return true;
     }
 }
 const history = new List();
