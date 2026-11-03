@@ -138,7 +138,30 @@
               </svg>
               Favoritos
             </h2>
-            <p class="empty-state">Seus favoritos aparecerão aqui.</p>
+            <div id="favorites-list" class="favorites-list">
+              <p class="empty-state">Seus favoritos aparecerão aqui.</p>
+            </div>
+            <template id="favorites-item-template">
+              <div class="favorite-item">
+                <img class="favorite-item-icon" alt="" aria-hidden="true" />
+                <span class="favorite-item-title"></span>
+                <div class="favorite-item-actions">
+                  <button
+                    class="favorite-action-button"
+                    type="button"
+                    aria-label="Remover dos favoritos"
+                    title="Remover dos favoritos"
+                    data-action="favorite"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path
+                        d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </template>
           </section>
         </aside>
 
