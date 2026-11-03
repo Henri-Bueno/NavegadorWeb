@@ -37,6 +37,11 @@ button {
   color: inherit;
 }
 
+.icon-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .browser {
   display: grid;
   grid-template-rows: 64px 72px minmax(0, 1fr);
