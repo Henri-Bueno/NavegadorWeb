@@ -1,223 +1,289 @@
 // Ponto de entrada do navegador
-import { MyNode, registerVisit, updateVisitTitle, getHistory, deleteVisit, selectVisit } from "./history.js";
-import {addFavorite, getFavorites, deleteFavorite, isFavorite, loadFavorites} from "./favorites.js";
+import {
+  MyNode,
+  registerVisit,
+  updateVisitTitle,
+  getHistory,
+  deleteVisit,
+  selectVisit,
+} from "./history.js";
+import {
+  addFavorite,
+  getFavorites,
+  deleteFavorite,
+  isFavorite,
+  loadFavorites,
+} from "./favorites.js";
+import { backStack, forwardStack } from "./navigation.js";
 
-// Obtém referências aos elementos do DOM
-const frame = document.getElementById("browser-frame") as HTMLIFrameElement | null;
-const input = document.getElementById("url-input") as HTMLInputElement | null;
-const button = document.getElementById("navigate-button") as HTMLButtonElement | null;
+function getElement<T extends HTMLElement>(id: string): T {
+  const element = document.getElementById(id);
+  if (element === null) {
+    throw new Error(`Elemento #${id} não encontrado no HTML.`);
+  }
+  return element as T;
+}
 
-// Obtém referência à lista de histórico
-const historyList = document.getElementById("history-list");
-const historyTemplate = document.getElementById("history-item-template") as HTMLTemplateElement | null;
-
-// Obtém referência à lista de favoritos
-const favoritesList = document.getElementById("favorites-list");
-const favoritesTemplate = document.getElementById("favorites-item-template") as HTMLTemplateElement | null;
+const frame = getElement<HTMLIFrameElement>("browser-frame");
+const input = getElement<HTMLInputElement>("url-input");
+const navigateButton = getElement<HTMLButtonElement>("navigate-button");
+const backButton = getElement<HTMLButtonElement>("back-button");
+const forwardButton = getElement<HTMLButtonElement>("forward-button");
+const refreshButton = getElement<HTMLButtonElement>("refresh-button");
+const historyList = getElement<HTMLElement>("history-list");
+const historyTemplate = getElement<HTMLTemplateElement>("history-item-template");
+const favoritesList = getElement<HTMLElement>("favorites-list");
+const favoritesTemplate = getElement<HTMLTemplateElement>("favorites-item-template");
 
 let currentVisit: MyNode | null = null;
+let expectingLoad = false;
 
-// Função auxiliar para realizar a navegação
-function handleNavigation(): void {
-    if (input === null) return;
-
-    let url = input.value.trim();
-
-    if (url === "") return;
-
-    if (!url.startsWith("http://") && !url.startsWith("https://")) {
-        url = "https://" + url;
-    }
-
-    navigateTo(url);
+function normalizeUrl(rawUrl: string): string {
+  const value = rawUrl.trim();
+  if (value === "") return "";
+  return /^https?:\/\//i.test(value) ? value : `https://${value}`;
 }
 
-// Função auxiliar para navegar para uma URL
-function navigateTo(url: string): void {
-    if (frame === null) return;
-
-    if (input !== null) {
-    input.value = url;
+function updateNavigationButtons(): void {
+  backButton.disabled = backStack.isEmpty();
+  forwardButton.disabled = forwardStack.isEmpty();
 }
 
-    const visit = registerVisit(url);
-    currentVisit = visit;
-
-    frame.src = url;
-    renderHistory();
-    renderFavorites();
-
-    updateVisitTitle(visit).then((title) => {
-        if (title) {
-            renderHistory();
-        }
-    });
-}
-
-// Adiciona um listener de evento ao botão de navegação
-if (frame !== null && input !== null && button !== null) {
-
-  button.addEventListener("click", handleNavigation);
-
-input.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") {
-        handleNavigation();
-    }
-});
-};
-
-// Função auxiliar para renderizar o histórico de visitas
 function renderHistory(): void {
-    if (historyList === null || historyTemplate === null) return;
+  const visits = getHistory();
+  historyList.innerHTML = "";
 
-    const visits = getHistory();
+  if (visits.length === 0) {
+    const emptyMessage = document.createElement("p");
+    emptyMessage.className = "empty-state";
+    emptyMessage.textContent = "Suas páginas recentes aparecerão aqui.";
+    historyList.appendChild(emptyMessage);
+    return;
+  }
 
-    historyList.innerHTML = "";
+  visits.forEach((visit) => {
+    const clone = historyTemplate.content.cloneNode(true) as DocumentFragment;
+    const item = clone.querySelector<HTMLElement>(".history-item");
+    const title = clone.querySelector<HTMLElement>(".history-item-title");
+    const icon = clone.querySelector<HTMLImageElement>(".history-item-icon");
+    const deleteButton = clone.querySelector<HTMLButtonElement>('[data-action="delete"]');
+    const favoriteButton = clone.querySelector<HTMLButtonElement>('[data-action="favorite"]');
 
-    if (visits.length === 0) {
-        const emptyMessage = document.createElement("p");
-        emptyMessage.className = "empty-state";
-        emptyMessage.textContent = "Suas páginas recentes aparecerão aqui.";
+    if (!item || !title || !icon || !deleteButton || !favoriteButton) return;
 
-        historyList.appendChild(emptyMessage);
-        return;
-    }
+    title.textContent = visit.title || visit.url;
+    item.dataset.id = String(visit.id);
+    icon.src = visit.icon;
+    icon.onerror = () => { icon.hidden = true; };
 
-    visits.forEach((visit) => {
-        const clone = historyTemplate.content.cloneNode(true) as DocumentFragment;
+    if (currentVisit?.id === visit.id) item.classList.add("active");
+    if (isFavorite(visit.url)) favoriteButton.classList.add("favorited");
 
-        const item = clone.querySelector(".history-item") as HTMLElement;
-        const title = clone.querySelector(".history-item-title") as HTMLElement;
-        const icon = clone.querySelector(".history-item-icon") as HTMLImageElement;
-
-        title.textContent = visit.title || visit.url;
-
-        item.dataset.id = String(visit.id);
-
-        icon.src = visit.icon;
-
-        if (currentVisit?.id === visit.id) {
-            item.classList.add("active");
-        }
-
-        // Reacessar página ao clicar no título
-        title.addEventListener("click", () => {
-        if (frame === null || input === null) return;
-
-        const selectedVisit = selectVisit(visit.id);
-
-        if (selectedVisit === null) return;
-
-        currentVisit = selectedVisit;
-        frame.src = selectedVisit.url;
-        input.value = selectedVisit.url;
-
-        renderHistory();
-        renderFavorites();
-});
-
-        // Excluir visita do histórico
-        const deleteButton = clone.querySelector('[data-action="delete"]') as HTMLButtonElement;
-        deleteButton.addEventListener("click", () => {
-            deleteVisit(visit.id);
-            renderHistory();
-        });
-
-        // Adicionar ou remover favorito
-        const favoriteButton = clone.querySelector('[data-action="favorite"]') as HTMLButtonElement;
-        if (isFavorite(visit.url)) {favoriteButton.classList.add("favorited");}
-        favoriteButton.addEventListener("click", () => {
-            if (isFavorite(visit.url)) {
-                const favorite = getFavorites().find(
-                    (favorite) => favorite.url === visit.url
-                );
-
-                if (favorite) {
-                    deleteFavorite(favorite.id);
-                }
-            } else {
-                addFavorite(visit);
-            }
-
-            renderHistory();
-            renderFavorites();
-        });
-
-        // Insere o item depois de configurar os eventos
-        historyList.appendChild(clone);
+    title.addEventListener("click", () => {
+      const selectedVisit = selectVisit(visit.id);
+      if (selectedVisit === null) return;
+      if (currentVisit !== null && currentVisit.id !== selectedVisit.id) {
+        backStack.push(currentVisit);
+        forwardStack.clear();
+      }
+      showVisit(selectedVisit);
+      renderHistory();
+      renderFavorites();
     });
+
+    deleteButton.addEventListener("click", () => {
+      const wasCurrent = currentVisit?.id === visit.id;
+      deleteVisit(visit.id);
+      if (wasCurrent) {
+        currentVisit = null;
+        expectingLoad = false;
+        frame.src = "about:blank";
+      }
+      renderHistory();
+      updateNavigationButtons();
+    });
+
+    favoriteButton.addEventListener("click", () => {
+      if (isFavorite(visit.url)) {
+        const favorite = getFavorites().find((entry) => entry.url === visit.url);
+        if (favorite) deleteFavorite(favorite.id);
+      } else {
+        addFavorite(visit);
+      }
+      renderHistory();
+      renderFavorites();
+    });
+
+    historyList.appendChild(clone);
+  });
 }
 
 function renderFavorites(): void {
-    if (favoritesList === null || favoritesTemplate === null) return;
+  const favorites = getFavorites();
+  favoritesList.innerHTML = "";
 
-    const favorites = getFavorites();
+  if (favorites.length === 0) {
+    const emptyMessage = document.createElement("p");
+    emptyMessage.className = "empty-state";
+    emptyMessage.textContent = "Seus favoritos aparecerão aqui.";
+    favoritesList.appendChild(emptyMessage);
+    return;
+  }
 
-    favoritesList.innerHTML = "";
+  favorites.forEach((favorite) => {
+    const clone = favoritesTemplate.content.cloneNode(true) as DocumentFragment;
+    const item = clone.querySelector<HTMLElement>(".favorite-item");
+    const title = clone.querySelector<HTMLElement>(".favorite-item-title");
+    const icon = clone.querySelector<HTMLImageElement>(".favorite-item-icon");
+    const favoriteButton = clone.querySelector<HTMLButtonElement>('[data-action="favorite"]');
 
-    if (favorites.length === 0) {
-        const emptyMessage = document.createElement("p");
-        emptyMessage.className = "empty-state";
-        emptyMessage.textContent = "Seus favoritos aparecerão aqui.";
+    if (!item || !title || !icon || !favoriteButton) return;
 
-        favoritesList.appendChild(emptyMessage);
-        return;
-    }
+    title.textContent = favorite.title || favorite.url;
+    item.dataset.id = String(favorite.id);
+    icon.src = favorite.icon;
+    icon.onerror = () => { icon.hidden = true; };
 
-    favorites.forEach((favorite) => {
-        const clone = favoritesTemplate.content.cloneNode(true) as DocumentFragment;
+    if (currentVisit?.url === favorite.url) item.classList.add("favorite-item-active");
 
-        const item = clone.querySelector(".favorite-item") as HTMLElement;
-        const title = clone.querySelector(".favorite-item-title") as HTMLElement;
-        const icon = clone.querySelector(".favorite-item-icon") as HTMLImageElement;
-
-        title.textContent = favorite.title || favorite.url;
-
-        item.dataset.id = String(favorite.id);
-
-        icon.src = favorite.icon;
-
-        if (currentVisit?.url === favorite.url) {
-            item.classList.add("favorite-item-active");
+    title.addEventListener("click", () => {
+      const existingVisit = getHistory().find((visit) => visit.url === favorite.url);
+      if (existingVisit) {
+        const selectedVisit = selectVisit(existingVisit.id);
+        if (selectedVisit === null) return;
+        if (currentVisit !== null && currentVisit.id !== selectedVisit.id) {
+          backStack.push(currentVisit);
+          forwardStack.clear();
         }
-
-        // Reacessar página ao clicar no título do favorito
-        title.addEventListener("click", () => {
-            const existingVisit = getHistory().find(
-                (visit) => visit.url === favorite.url
-            );
-
-            if (existingVisit) {
-                const selectedVisit = selectVisit(existingVisit.id);
-
-                if (selectedVisit === null) return;
-
-                currentVisit = selectedVisit;
-                if (frame !== null) frame.src = selectedVisit.url;
-                if (input !== null) input.value = selectedVisit.url;
-
-                renderHistory();
-            } else {
-                navigateTo(favorite.url);
-            }
-        });
-
-        const favoriteButton = clone.querySelector('[data-action="favorite"]') as HTMLButtonElement;
-        favoriteButton.addEventListener("click", () => {
-            deleteFavorite(favorite.id);
-
-            renderFavorites();
-            renderHistory();
-        });
-
-        // insere o item depois de configurar os eventos
-        favoritesList.appendChild(clone);
+        showVisit(selectedVisit);
+      } else {
+        navigateTo(favorite.url);
+      }
+      renderHistory();
+      renderFavorites();
     });
+
+    favoriteButton.addEventListener("click", () => {
+      deleteFavorite(favorite.id);
+      renderFavorites();
+      renderHistory();
+    });
+
+    favoritesList.appendChild(clone);
+  });
 }
 
-// Carrega os favoritos salvos
-loadFavorites();
+function showVisit(visit: MyNode): void {
+  currentVisit = visit;
+  input.value = visit.url;
+  expectingLoad = true;
+  frame.src = `/proxy?url=${encodeURIComponent(visit.url)}`;
+  updateNavigationButtons();
+}
 
-// Renderização inicial
+function navigateTo(rawUrl: string): void {
+  const url = normalizeUrl(rawUrl);
+  if (url === "") return;
+
+  let parsedUrl: URL;
+  try {
+    parsedUrl = new URL(url);
+  } catch {
+    return;
+  }
+  if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") return;
+
+  if (currentVisit !== null) backStack.push(currentVisit);
+  forwardStack.clear();
+
+  const visit = registerVisit(parsedUrl.href);
+  showVisit(visit);
+  renderHistory();
+  renderFavorites();
+
+  // Usa o endpoint existente para obter título quando o proxy não fornecer um.
+  void updateVisitTitle(visit).then((title) => {
+    if (title && getHistory().some((entry) => entry.id === visit.id)) {
+      renderHistory();
+    }
+  });
+}
+
+function goBack(): void {
+  if (currentVisit === null) return;
+  const previous = backStack.pop();
+  if (previous === null) return;
+  forwardStack.push(currentVisit);
+  const selected = selectVisit(previous.id) ?? previous;
+  showVisit(selected);
+  renderHistory();
+  renderFavorites();
+}
+
+function goForward(): void {
+  if (currentVisit === null) return;
+  const next = forwardStack.pop();
+  if (next === null) return;
+  backStack.push(currentVisit);
+  const selected = selectVisit(next.id) ?? next;
+  showVisit(selected);
+  renderHistory();
+  renderFavorites();
+}
+
+function reload(): void {
+  if (currentVisit === null) return;
+  expectingLoad = true;
+  frame.src = `/proxy?url=${encodeURIComponent(currentVisit.url)}&reload=${Date.now()}`;
+}
+
+navigateButton.addEventListener("click", () => navigateTo(input.value));
+input.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") navigateTo(input.value);
+});
+backButton.addEventListener("click", goBack);
+forwardButton.addEventListener("click", goForward);
+refreshButton.addEventListener("click", reload);
+
+window.addEventListener("message", (event: MessageEvent<unknown>) => {
+  if (event.source !== frame.contentWindow || event.origin !== window.location.origin) return;
+  if (typeof event.data !== "object" || event.data === null) return;
+
+  const data = event.data as { type?: unknown; url?: unknown; title?: unknown };
+  if (data.type !== "navegador:navigated" || typeof data.url !== "string") return;
+
+  let url: URL;
+  try {
+    url = new URL(data.url);
+  } catch {
+    return;
+  }
+  if (url.protocol !== "http:" && url.protocol !== "https:") return;
+
+  const title = typeof data.title === "string" ? data.title : "";
+  if (expectingLoad && currentVisit !== null) {
+    expectingLoad = false;
+    currentVisit.url = url.href;
+    if (title) currentVisit.title = title;
+    input.value = url.href;
+    renderHistory();
+    renderFavorites();
+    return;
+  }
+
+  if (currentVisit !== null) backStack.push(currentVisit);
+  forwardStack.clear();
+  const visit = registerVisit(url.href);
+  if (title) visit.title = title;
+  currentVisit = visit;
+  input.value = url.href;
+  renderHistory();
+  renderFavorites();
+  updateNavigationButtons();
+});
+
+loadFavorites();
 renderHistory();
 renderFavorites();
+updateNavigationButtons();
+navigateTo("https://example.com");

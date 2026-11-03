@@ -35,8 +35,19 @@ function loadFavorites() {
     const savedData = localStorage.getItem("browser-favorites");
     if (savedData === null)
         return;
-    const savedFavorites = JSON.parse(savedData);
+    let savedFavorites;
+    try {
+        const parsed = JSON.parse(savedData);
+        if (!Array.isArray(parsed))
+            return;
+        savedFavorites = parsed.filter((item) => typeof item?.url === "string" && typeof item?.title === "string" && typeof item?.icon === "string");
+    }
+    catch {
+        return;
+    }
     savedFavorites.forEach((data) => {
+        if (isFavorite(data.url))
+            return;
         const favorite = new MyNode(data.url, data.title);
         favorite.icon = data.icon;
         favorites.add(favorite);

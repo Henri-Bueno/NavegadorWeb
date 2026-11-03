@@ -2,7 +2,12 @@ import { MyNode, List, getDomain, getPageIcon, fetchPageTitle } from "./lista-en
 const history = new List();
 function registerVisit(url) {
     const visit = new MyNode(url, getDomain(url));
-    visit.icon = getPageIcon(url);
+    try {
+        visit.icon = getPageIcon(url);
+    }
+    catch {
+        visit.icon = "";
+    }
     history.add(visit);
     return visit;
 }

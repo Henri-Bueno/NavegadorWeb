@@ -51,13 +51,26 @@ function loadFavorites(): void {
 
     if (savedData === null) return;
 
-    const savedFavorites = JSON.parse(savedData) as {
+    let savedFavorites: {
         url: string;
         title: string;
         icon: string;
     }[];
 
+    try {
+        const parsed: unknown = JSON.parse(savedData);
+        if (!Array.isArray(parsed)) return;
+        savedFavorites = parsed.filter((item): item is {
+            url: string;
+            title: string;
+            icon: string;
+        } => typeof item?.url === "string" && typeof item?.title === "string" && typeof item?.icon === "string");
+    } catch {
+        return;
+    }
+
     savedFavorites.forEach((data) => {
+        if (isFavorite(data.url)) return;
         const favorite = new MyNode(data.url, data.title);
         favorite.icon = data.icon;
 
