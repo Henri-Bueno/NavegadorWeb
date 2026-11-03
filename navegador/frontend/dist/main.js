@@ -1,5 +1,6 @@
 // Ponto de entrada do navegador
-import { MyNode, history } from "./history.js";
+import { registerVisit, updateVisitTitle, getHistory, deleteVisit, selectVisit } from "./history.js";
+import { addFavorite, getFavorites, deleteFavorite, isFavorite, loadFavorites } from "./favorites.js";
 // Obtém referências aos elementos do DOM
 const frame = document.getElementById("browser-frame");
 const input = document.getElementById("url-input");
@@ -7,6 +8,10 @@ const button = document.getElementById("navigate-button");
 // Obtém referência à lista de histórico
 const historyList = document.getElementById("history-list");
 const historyTemplate = document.getElementById("history-item-template");
+// Obtém referência à lista de favoritos
+const favoritesList = document.getElementById("favorites-list");
+const favoritesTemplate = document.getElementById("favorites-item-template");
+let currentVisit = null;
 // Função auxiliar para realizar a navegação
 function handleNavigation() {
     if (input === null)
@@ -26,24 +31,32 @@ function navigateTo(url) {
     if (input !== null) {
         input.value = url;
     }
-    const visit = new MyNode(url, getDomain(url));
-    visit.icon = getPageIcon(url);
-    history.add(visit);
+    const visit = registerVisit(url);
     currentVisit = visit;
     frame.src = url;
     renderHistory();
-    fetchPageTitle(url).then((title) => {
+    renderFavorites();
+    updateVisitTitle(visit).then((title) => {
         if (title) {
-            visit.title = title;
             renderHistory();
         }
     });
 }
+// Adiciona um listener de evento ao botão de navegação
+if (frame !== null && input !== null && button !== null) {
+    button.addEventListener("click", handleNavigation);
+    input.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+            handleNavigation();
+        }
+    });
+}
+;
 // Função auxiliar para renderizar o histórico de visitas
 function renderHistory() {
     if (historyList === null || historyTemplate === null)
         return;
-    const visits = history.getAll();
+    const visits = getHistory();
     historyList.innerHTML = "";
     if (visits.length === 0) {
         const emptyMessage = document.createElement("p");
@@ -67,57 +80,96 @@ function renderHistory() {
         title.addEventListener("click", () => {
             if (frame === null || input === null)
                 return;
-            history.moveToStart(visit.id);
-            currentVisit = visit;
-            frame.src = visit.url;
-            input.value = visit.url;
+            const selectedVisit = selectVisit(visit.id);
+            if (selectedVisit === null)
+                return;
+            currentVisit = selectedVisit;
+            frame.src = selectedVisit.url;
+            input.value = selectedVisit.url;
             renderHistory();
+            renderFavorites();
         });
         // Excluir visita do histórico
         const deleteButton = clone.querySelector('[data-action="delete"]');
         deleteButton.addEventListener("click", () => {
-            history.remove(visit.id);
+            deleteVisit(visit.id);
             renderHistory();
+        });
+        // Adicionar ou remover favorito
+        const favoriteButton = clone.querySelector('[data-action="favorite"]');
+        if (isFavorite(visit.url)) {
+            favoriteButton.classList.add("favorited");
+        }
+        favoriteButton.addEventListener("click", () => {
+            if (isFavorite(visit.url)) {
+                const favorite = getFavorites().find((favorite) => favorite.url === visit.url);
+                if (favorite) {
+                    deleteFavorite(favorite.id);
+                }
+            }
+            else {
+                addFavorite(visit);
+            }
+            renderHistory();
+            renderFavorites();
         });
         // Insere o item depois de configurar os eventos
         historyList.appendChild(clone);
     });
 }
-// Função auxiliar para obter o domínio da página a partir da URL
-function getDomain(url) {
-    try {
-        const domain = new URL(url).hostname.replace("www.", "");
-        return domain.charAt(0).toUpperCase() + domain.slice(1);
+function renderFavorites() {
+    if (favoritesList === null || favoritesTemplate === null)
+        return;
+    const favorites = getFavorites();
+    favoritesList.innerHTML = "";
+    if (favorites.length === 0) {
+        const emptyMessage = document.createElement("p");
+        emptyMessage.className = "empty-state";
+        emptyMessage.textContent = "Seus favoritos aparecerão aqui.";
+        favoritesList.appendChild(emptyMessage);
+        return;
     }
-    catch {
-        return url;
-    }
-}
-// Função auxiliar para obter o ícone da página a partir da URL
-function getPageIcon(url) {
-    const domain = new URL(url).hostname;
-    return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
-}
-async function fetchPageTitle(url) {
-    try {
-        const response = await fetch(`/api/page-title?url=${encodeURIComponent(url)}`);
-        if (!response.ok)
-            return null;
-        const data = await response.json();
-        return data.title;
-    }
-    catch {
-        return null;
-    }
-}
-let currentVisit = null;
-// Adiciona um listener de evento ao botão de navegação
-if (frame !== null && input !== null && button !== null) {
-    button.addEventListener("click", handleNavigation);
-    input.addEventListener("keydown", (event) => {
-        if (event.key === "Enter") {
-            handleNavigation();
+    favorites.forEach((favorite) => {
+        const clone = favoritesTemplate.content.cloneNode(true);
+        const item = clone.querySelector(".favorite-item");
+        const title = clone.querySelector(".favorite-item-title");
+        const icon = clone.querySelector(".favorite-item-icon");
+        title.textContent = favorite.title || favorite.url;
+        item.dataset.id = String(favorite.id);
+        icon.src = favorite.icon;
+        if (currentVisit?.url === favorite.url) {
+            item.classList.add("favorite-item-active");
         }
+        // Reacessar página ao clicar no título do favorito
+        title.addEventListener("click", () => {
+            const existingVisit = getHistory().find((visit) => visit.url === favorite.url);
+            if (existingVisit) {
+                const selectedVisit = selectVisit(existingVisit.id);
+                if (selectedVisit === null)
+                    return;
+                currentVisit = selectedVisit;
+                if (frame !== null)
+                    frame.src = selectedVisit.url;
+                if (input !== null)
+                    input.value = selectedVisit.url;
+                renderHistory();
+            }
+            else {
+                navigateTo(favorite.url);
+            }
+        });
+        const favoriteButton = clone.querySelector('[data-action="favorite"]');
+        favoriteButton.addEventListener("click", () => {
+            deleteFavorite(favorite.id);
+            renderFavorites();
+            renderHistory();
+        });
+        // insere o item depois de configurar os eventos
+        favoritesList.appendChild(clone);
     });
 }
-;
+// Carrega os favoritos salvos
+loadFavorites();
+// Renderização inicial
+renderHistory();
+renderFavorites();
