@@ -7,10 +7,25 @@ const button = document.getElementById("navigate-button");
 // Obtém referência à lista de histórico
 const historyList = document.getElementById("history-list");
 const historyTemplate = document.getElementById("history-item-template");
+// Função auxiliar para realizar a navegação
+function handleNavigation() {
+    if (input === null)
+        return;
+    let url = input.value.trim();
+    if (url === "")
+        return;
+    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+        url = "https://" + url;
+    }
+    navigateTo(url);
+}
 // Função auxiliar para navegar para uma URL
 function navigateTo(url) {
     if (frame === null)
         return;
+    if (input !== null) {
+        input.value = url;
+    }
     const visit = new MyNode(url, getDomain(url));
     visit.icon = getPageIcon(url);
     history.add(visit);
@@ -50,11 +65,12 @@ function renderHistory() {
         }
         // Reacessar página ao clicar no título
         title.addEventListener("click", () => {
-            if (frame === null)
+            if (frame === null || input === null)
                 return;
             history.moveToStart(visit.id);
             currentVisit = visit;
             frame.src = visit.url;
+            input.value = visit.url;
             renderHistory();
         });
         // Excluir visita do histórico
@@ -97,13 +113,11 @@ async function fetchPageTitle(url) {
 let currentVisit = null;
 // Adiciona um listener de evento ao botão de navegação
 if (frame !== null && input !== null && button !== null) {
-    button.addEventListener("click", () => {
-        let url = input.value.trim();
-        if (url === "")
-            return;
-        if (!url.startsWith("http://") && !url.startsWith("https://")) {
-            url = "https://" + url;
+    button.addEventListener("click", handleNavigation);
+    input.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+            handleNavigation();
         }
-        navigateTo(url);
     });
 }
+;
