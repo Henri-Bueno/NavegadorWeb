@@ -254,6 +254,101 @@ button {
   line-height: 1.55;
 }
 
+.history-list {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.history-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+  padding: 8px;
+  color: #cbd5e1;
+  background: #131d2d;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  transition: background-color 140ms ease, border-color 140ms ease;
+}
+
+.history-item:hover {
+  background: var(--surface-raised);
+  border-color: var(--border);
+}
+
+.history-item.active {
+  background-color: #1d3554;
+  border-color: #3b82f6;
+}
+
+.history-item-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.history-item-title {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 0;
+  overflow-wrap: anywhere;
+}
+
+.history-item-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 2px;
+}
+
+.history-action-button {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  place-items: center;
+  color: #91a0b7;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+.history-action-button:hover {
+  color: #f8fafc;
+  background: #29364a;
+  border-color: #3a4b64;
+}
+
+.history-action-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.history-action-button svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.history-action-button[data-action="favorite"]:hover {
+  color: #fbbf24;
+}
+
+.history-delete-button:hover {
+  color: #fca5a5;
+}
+
 .page-area {
   min-width: 0;
   min-height: 0;
