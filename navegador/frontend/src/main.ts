@@ -35,20 +35,24 @@ const historyTemplate = getElement<HTMLTemplateElement>("history-item-template")
 const favoritesList = getElement<HTMLElement>("favorites-list");
 const favoritesTemplate = getElement<HTMLTemplateElement>("favorites-item-template");
 
+// Variáveis de estado da navegação
 let currentVisit: MyNode | null = null;
 let expectingLoad = false;
 
+//funcao auxiliar para normalizar a url
 function normalizeUrl(rawUrl: string): string {
   const value = rawUrl.trim();
   if (value === "") return "";
   return /^https?:\/\//i.test(value) ? value : `https://${value}`;
 }
 
+//habilita ou desabilita os botoes de navegacao de acordo com o estado das pilhas
 function updateNavigationButtons(): void {
   backButton.disabled = backStack.isEmpty();
   forwardButton.disabled = forwardStack.isEmpty();
 }
 
+//renderiza a lista de historico
 function renderHistory(): void {
   const visits = getHistory();
   historyList.innerHTML = "";
@@ -118,6 +122,7 @@ function renderHistory(): void {
   });
 }
 
+//renderiza a lista de favoritos
 function renderFavorites(): void {
   const favorites = getFavorites();
   favoritesList.innerHTML = "";
@@ -173,6 +178,7 @@ function renderFavorites(): void {
   });
 }
 
+//funcao para mostrar uma visita no iframe e atualizar o input
 function showVisit(visit: MyNode): void {
   currentVisit = visit;
   input.value = visit.url;
@@ -181,6 +187,7 @@ function showVisit(visit: MyNode): void {
   updateNavigationButtons();
 }
 
+//funcao para navegar para uma url
 function navigateTo(rawUrl: string): void {
   const url = normalizeUrl(rawUrl);
   if (url === "") return;
@@ -209,6 +216,7 @@ function navigateTo(rawUrl: string): void {
   });
 }
 
+//funcao para voltar uma visita na pilha 
 function goBack(): void {
   if (currentVisit === null) return;
   const previous = backStack.pop();
@@ -220,6 +228,7 @@ function goBack(): void {
   renderFavorites();
 }
 
+//funcao para avançar uma visita na pilha
 function goForward(): void {
   if (currentVisit === null) return;
   const next = forwardStack.pop();
@@ -231,6 +240,7 @@ function goForward(): void {
   renderFavorites();
 }
 
+//funcao para recarregar a visita atual
 function reload(): void {
   if (currentVisit === null) return;
   expectingLoad = true;
@@ -238,9 +248,7 @@ function reload(): void {
 }
 
 navigateButton.addEventListener("click", () => navigateTo(input.value));
-input.addEventListener("keydown", (event) => {
-  if (event.key === "Enter") navigateTo(input.value);
-});
+input.addEventListener("keydown", (event) => {if (event.key === "Enter") navigateTo(input.value);});
 backButton.addEventListener("click", goBack);
 forwardButton.addEventListener("click", goForward);
 refreshButton.addEventListener("click", reload);

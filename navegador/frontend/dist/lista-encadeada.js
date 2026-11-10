@@ -68,6 +68,13 @@ class List {
         return true;
     }
 }
+//----------funcoes auxiliares para montar o nó---------
+// Função auxiliar para obter o ícone da página a partir da URL
+function getPageIcon(url) {
+    const domain = new URL(url).hostname;
+    return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+    ;
+}
 // Função auxiliar para obter o domínio da página a partir da URL
 function getDomain(url) {
     try {
@@ -77,12 +84,6 @@ function getDomain(url) {
     catch {
         return url;
     }
-}
-// Função auxiliar para obter o ícone da página a partir da URL
-function getPageIcon(url) {
-    const domain = new URL(url).hostname;
-    return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
-    ;
 }
 async function fetchPageTitle(url) {
     try {

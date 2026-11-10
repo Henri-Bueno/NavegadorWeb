@@ -1,3 +1,4 @@
+// classe nó base para lista encadeada
 class MyNode {
     static nextId: number = 1;
 
@@ -15,7 +16,7 @@ class MyNode {
         this.icon = "";
     }
 }
-
+// classe lista encadeada para historico e favoritos
 class List{
     length: number;
     start: MyNode | null
@@ -91,6 +92,16 @@ class List{
 
     }
 
+//----------funcoes auxiliares para montar o nó---------
+
+
+// Função auxiliar para obter o ícone da página a partir da URL
+function getPageIcon(url: string): string {
+    const domain = new URL(url).hostname;
+
+    return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;;
+}
+
 // Função auxiliar para obter o domínio da página a partir da URL
 function getDomain(url: string): string {
     try {
@@ -100,14 +111,7 @@ function getDomain(url: string): string {
         return url;
     }
 }
-
-// Função auxiliar para obter o ícone da página a partir da URL
-function getPageIcon(url: string): string {
-    const domain = new URL(url).hostname;
-
-    return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;;
-}
-
+// Função auxiliar para buscar o título da página a partir da URL
 async function fetchPageTitle(url: string): Promise<string | null> {
     try {
         const response = await fetch(

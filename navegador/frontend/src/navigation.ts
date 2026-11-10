@@ -1,5 +1,6 @@
 import { MyNode } from "./history.js";
 
+//classe nó para pilha de navegacao
 class StackNode {
     value: MyNode;
     next: StackNode | null;
@@ -9,7 +10,7 @@ class StackNode {
         this.next = null;
     }
 }
-
+//classe para pilhas de navegacao
 class Stack {
     length: number;
     top: StackNode | null;
@@ -53,6 +54,7 @@ class Stack {
     }
 }
 
+//cria as pilhas de navegacao para tras e frente
 const backStack = new Stack();
 const forwardStack = new Stack();
 

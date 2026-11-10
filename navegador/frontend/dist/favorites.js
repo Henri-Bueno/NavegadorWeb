@@ -1,5 +1,7 @@
 import { MyNode, List } from "./lista-encadeada.js";
 const favorites = new List();
+//----------funcoes para manipular a lista histórico---------
+//registra uma visita na lista de favoritos
 function addFavorite(visit) {
     //verifica se ja esta nos favoritos
     const existingFavorite = favorites.getAll().find((favorite) => favorite.url === visit.url);
@@ -10,9 +12,11 @@ function addFavorite(visit) {
     favorites.add(favorite);
     saveFavorites();
 }
+//busca todas as visitas nos favoritos
 function getFavorites() {
     return favorites.getAll();
 }
+//deleta uma visita nos favoritos
 function deleteFavorite(id) {
     const removed = favorites.remove(id);
     if (removed) {
@@ -20,9 +24,11 @@ function deleteFavorite(id) {
     }
     return removed;
 }
+//verifica se a visita esta nos favoritos
 function isFavorite(url) {
     return favorites.getAll().some((favorite) => favorite.url === url);
 }
+//-----funcoes para salvar e carregar os favoritos do localStorage-----
 function saveFavorites() {
     const data = favorites.getAll().map((favorite) => ({
         url: favorite.url,
