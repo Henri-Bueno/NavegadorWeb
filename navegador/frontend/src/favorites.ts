@@ -37,9 +37,15 @@ function deleteFavorite(id: number): boolean {
 }
 //verifica se a visita esta nos favoritos
 function isFavorite(url: string): boolean {
-    return favorites.getAll().some(
-        (favorite) => favorite.url === url
-    );
+    const favoritesList = favorites.getAll();
+
+    for (const favorite of favoritesList) {
+        if (favorite.url === url) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 
