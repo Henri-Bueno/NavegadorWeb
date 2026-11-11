@@ -1,6 +1,6 @@
 import { MyNode, List } from "./lista-encadeada.js";
 const favorites = new List();
-//----------funcoes para manipular a lista histórico---------
+//----------funcoes para manipular a lista favoritos---------
 //registra uma visita na lista de favoritos
 function addFavorite(visit) {
     //verifica se ja esta nos favoritos

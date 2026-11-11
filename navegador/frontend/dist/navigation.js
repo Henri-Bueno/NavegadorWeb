@@ -1,9 +1,11 @@
+//classe nó para pilha de navegacao
 class StackNode {
     constructor(value) {
         this.value = value;
         this.next = null;
     }
 }
+//classe para pilhas de navegacao
 class Stack {
     constructor() {
         this.length = 0;
@@ -36,6 +38,7 @@ class Stack {
         this.length = 0;
     }
 }
+//cria as pilhas de navegacao para tras e frente
 const backStack = new Stack();
 const forwardStack = new Stack();
 export { Stack, backStack, forwardStack };

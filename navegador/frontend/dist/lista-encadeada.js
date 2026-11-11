@@ -1,3 +1,4 @@
+// classe nó base para lista encadeada
 class MyNode {
     constructor(url, title = "") {
         this.url = url;
@@ -8,6 +9,7 @@ class MyNode {
     }
 }
 MyNode.nextId = 1;
+// classe lista encadeada para historico e favoritos
 class List {
     constructor() {
         this.start = null;
@@ -85,6 +87,7 @@ function getDomain(url) {
         return url;
     }
 }
+// Função auxiliar para buscar o título da página a partir da URL
 async function fetchPageTitle(url) {
     try {
         const response = await fetch(`/api/page-title?url=${encodeURIComponent(url)}`);

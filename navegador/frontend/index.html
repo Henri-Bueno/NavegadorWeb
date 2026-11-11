@@ -169,13 +169,61 @@
         </aside>
 
         <main class="page-area">
+          <input
+            id="frame-toggle"
+            class="frame-toggle"
+            type="checkbox"
+            aria-label="Expandir ou recolher a página"
+          />
           <iframe
             id="browser-frame"
             src="https://example.com"
             title="Página acessada"
           ></iframe>
+          <label
+            class="frame-toggle-button"
+            for="frame-toggle"
+            title="Expandir ou recolher a página"
+          >
+            <svg class="expand-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5" />
+            </svg>
+            <svg class="collapse-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M8 3v5H3m13-5v5h5M3 16h5v5m13-5h-5v5" />
+            </svg>
+          </label>
         </main>
       </div>
+      <footer class="structure-footer">
+        <section class="structure-panel" aria-labelledby="structure-heading">
+          <h2 class="structure-heading" id="structure-heading">
+            Estrutura de navegação
+          </h2>
+          <div class="structure-current">
+            <span class="structure-label">Visita atual</span>
+            <strong id="structure-current-title">Nenhuma página aberta</strong>
+            <span id="structure-current-url" class="structure-url">
+              O navegador está sem uma visita atual.
+            </span>
+          </div>
+          <div class="stack-grid">
+            <section class="stack-card" aria-labelledby="back-stack-heading">
+              <div class="stack-card-heading">
+                <h3 id="back-stack-heading">Pilha voltar</h3>
+                <span id="back-stack-count" class="stack-count">0 páginas</span>
+              </div>
+              <pre id="back-stack-items" class="stack-items">Pilha vazia</pre>
+            </section>
+            <section class="stack-card" aria-labelledby="forward-stack-heading">
+              <div class="stack-card-heading">
+                <h3 id="forward-stack-heading">Pilha avançar</h3>
+                <span id="forward-stack-count" class="stack-count">0 páginas</span>
+              </div>
+              <pre id="forward-stack-items" class="stack-items">Pilha vazia</pre>
+            </section>
+          </div>
+        </section>
+      </footer>
     </div>
   </body>
 </html>

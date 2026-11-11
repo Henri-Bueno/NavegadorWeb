@@ -19,18 +19,102 @@ const historyList = getElement("history-list");
 const historyTemplate = getElement("history-item-template");
 const favoritesList = getElement("favorites-list");
 const favoritesTemplate = getElement("favorites-item-template");
+// Variáveis de estado
 let currentVisit = null;
 let expectingLoad = false;
+//----------funcoes para controlar a navegacao---------
+//funcao auxiliar para normalizar a url
 function normalizeUrl(rawUrl) {
     const value = rawUrl.trim();
     if (value === "")
         return "";
     return /^https?:\/\//i.test(value) ? value : `https://${value}`;
 }
+//funcao para navegar para uma url
+function navigateTo(rawUrl) {
+    const url = normalizeUrl(rawUrl);
+    if (url === "")
+        return;
+    let parsedUrl;
+    try {
+        parsedUrl = new URL(url);
+    }
+    catch {
+        return;
+    }
+    if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:")
+        return;
+    if (currentVisit !== null)
+        backStack.push(currentVisit);
+    forwardStack.clear();
+    const visit = registerVisit(parsedUrl.href);
+    showVisit(visit);
+    renderHistory();
+    renderFavorites();
+    // Usa o endpoint existente para obter título quando o proxy não fornecer um.
+    void updateVisitTitle(visit).then((title) => {
+        if (title && getHistory().some((entry) => entry.id === visit.id)) {
+            renderHistory();
+            renderStructurePanel();
+        }
+    });
+}
+//funcao para mostrar uma visita no iframe e atualizar o input
+function showVisit(visit) {
+    currentVisit = visit;
+    input.value = visit.url;
+    expectingLoad = true;
+    frame.src = `/proxy?url=${encodeURIComponent(visit.url)}`;
+    updateNavigationButtons();
+}
+//funcao para voltar uma visita na pilha 
+function goBack() {
+    if (currentVisit === null)
+        return;
+    const previous = backStack.pop();
+    if (previous === null)
+        return;
+    forwardStack.push(currentVisit);
+    const selected = selectVisit(previous.id) ?? previous;
+    showVisit(selected);
+    renderHistory();
+    renderFavorites();
+}
+//funcao para avançar uma visita na pilha
+function goForward() {
+    if (currentVisit === null)
+        return;
+    const next = forwardStack.pop();
+    if (next === null)
+        return;
+    backStack.push(currentVisit);
+    const selected = selectVisit(next.id) ?? next;
+    showVisit(selected);
+    renderHistory();
+    renderFavorites();
+}
+//funcao para recarregar a visita atual
+function reload() {
+    if (currentVisit === null)
+        return;
+    expectingLoad = true;
+    frame.src = `/proxy?url=${encodeURIComponent(currentVisit.url)}&reload=${Date.now()}`;
+}
+//habilita ou desabilita os botoes de navegacao de acordo com o estado das pilhas
 function updateNavigationButtons() {
     backButton.disabled = backStack.isEmpty();
     forwardButton.disabled = forwardStack.isEmpty();
+    renderStructurePanel();
 }
+//---------- eventos dos botoes de navegacao---------
+navigateButton.addEventListener("click", () => navigateTo(input.value));
+input.addEventListener("keydown", (event) => { if (event.key === "Enter")
+    navigateTo(input.value); });
+backButton.addEventListener("click", goBack);
+forwardButton.addEventListener("click", goForward);
+refreshButton.addEventListener("click", reload);
+//---------- renderizacao do historico e favoritos ---------
+//renderiza a lista de historico
 function renderHistory() {
     const visits = getHistory();
     historyList.innerHTML = "";
@@ -96,6 +180,7 @@ function renderHistory() {
         historyList.appendChild(clone);
     });
 }
+//renderiza a lista de favoritos
 function renderFavorites() {
     const favorites = getFavorites();
     favoritesList.innerHTML = "";
@@ -146,78 +231,59 @@ function renderFavorites() {
         favoritesList.appendChild(clone);
     });
 }
-function showVisit(visit) {
-    currentVisit = visit;
-    input.value = visit.url;
-    expectingLoad = true;
-    frame.src = `/proxy?url=${encodeURIComponent(visit.url)}`;
-    updateNavigationButtons();
-}
-function navigateTo(rawUrl) {
-    const url = normalizeUrl(rawUrl);
-    if (url === "")
-        return;
-    let parsedUrl;
-    try {
-        parsedUrl = new URL(url);
+//---------- funcoes para visualizar as pilhas---------
+// Percorre uma pilha e retorna suas visitas começando pelo topo.
+function getStackVisits(stack) {
+    const visits = [];
+    let node = stack.top;
+    while (node !== null) {
+        visits.push(node.value);
+        node = node.next;
     }
-    catch {
-        return;
+    return visits;
+}
+// Organiza as visitas da pilha para exibição.
+function formatStack(visits) {
+    if (visits.length === 0) {
+        return "Pilha vazia";
     }
-    if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:")
-        return;
-    if (currentVisit !== null)
-        backStack.push(currentVisit);
-    forwardStack.clear();
-    const visit = registerVisit(parsedUrl.href);
-    showVisit(visit);
-    renderHistory();
-    renderFavorites();
-    // Usa o endpoint existente para obter título quando o proxy não fornecer um.
-    void updateVisitTitle(visit).then((title) => {
-        if (title && getHistory().some((entry) => entry.id === visit.id)) {
-            renderHistory();
-        }
-    });
+    return visits.map((visit, index) => {
+        const position = index === 0 ? "TOPO" : `#${index + 1}`;
+        return `${position} — ${visit.title || visit.url}\n${visit.url}`;
+    }).join("\n\n");
 }
-function goBack() {
-    if (currentVisit === null)
+// Atualiza as informações da visita atual e das pilhas na interface.
+function renderStructurePanel() {
+    const currentTitle = document.getElementById("structure-current-title");
+    const currentUrl = document.getElementById("structure-current-url");
+    if (currentTitle === null || currentUrl === null)
         return;
-    const previous = backStack.pop();
-    if (previous === null)
-        return;
-    forwardStack.push(currentVisit);
-    const selected = selectVisit(previous.id) ?? previous;
-    showVisit(selected);
-    renderHistory();
-    renderFavorites();
+    currentTitle.textContent = currentVisit
+        ? currentVisit.title || currentVisit.url
+        : "Nenhuma página aberta";
+    currentUrl.textContent = currentVisit
+        ? currentVisit.url
+        : "O navegador está sem uma visita atual.";
+    const backVisits = getStackVisits(backStack);
+    const forwardVisits = getStackVisits(forwardStack);
+    const backCount = document.getElementById("back-stack-count");
+    const forwardCount = document.getElementById("forward-stack-count");
+    const backItems = document.getElementById("back-stack-items");
+    const forwardItems = document.getElementById("forward-stack-items");
+    if (backCount) {
+        backCount.textContent = `${backVisits.length} ${backVisits.length === 1 ? "página" : "páginas"}`;
+    }
+    if (forwardCount) {
+        forwardCount.textContent = `${forwardVisits.length} ${forwardVisits.length === 1 ? "página" : "páginas"}`;
+    }
+    if (backItems) {
+        backItems.textContent = formatStack(backVisits);
+    }
+    if (forwardItems) {
+        forwardItems.textContent = formatStack(forwardVisits);
+    }
 }
-function goForward() {
-    if (currentVisit === null)
-        return;
-    const next = forwardStack.pop();
-    if (next === null)
-        return;
-    backStack.push(currentVisit);
-    const selected = selectVisit(next.id) ?? next;
-    showVisit(selected);
-    renderHistory();
-    renderFavorites();
-}
-function reload() {
-    if (currentVisit === null)
-        return;
-    expectingLoad = true;
-    frame.src = `/proxy?url=${encodeURIComponent(currentVisit.url)}&reload=${Date.now()}`;
-}
-navigateButton.addEventListener("click", () => navigateTo(input.value));
-input.addEventListener("keydown", (event) => {
-    if (event.key === "Enter")
-        navigateTo(input.value);
-});
-backButton.addEventListener("click", goBack);
-forwardButton.addEventListener("click", goForward);
-refreshButton.addEventListener("click", reload);
+//---------- evento de comunicacao com o iframe---------
 window.addEventListener("message", (event) => {
     if (event.source !== frame.contentWindow || event.origin !== window.location.origin)
         return;
@@ -244,6 +310,7 @@ window.addEventListener("message", (event) => {
         input.value = url.href;
         renderHistory();
         renderFavorites();
+        renderStructurePanel();
         return;
     }
     if (currentVisit !== null)
@@ -262,4 +329,4 @@ loadFavorites();
 renderHistory();
 renderFavorites();
 updateNavigationButtons();
-navigateTo("https://example.com");
+navigateTo("https://github.com/Henri-Bueno/NavegadorWeb");

@@ -38,11 +38,13 @@ function deleteVisit(id: number): boolean {
 }
 //seleciona e retorna uma visita e depois move ela para o inicio da lista
 function selectVisit(id: number): MyNode | null {
-    const visit = history.getAll().find((visit) => visit.id === id);
+    const visits = history.getAll();
 
-    if (visit !== undefined) {
-        history.moveToStart(id);
-        return visit;
+    for (const visit of visits) {
+        if (visit.id === id) {
+            history.moveToStart(id);
+            return visit;
+        }
     }
 
     return null;
