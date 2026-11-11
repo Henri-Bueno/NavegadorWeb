@@ -6,9 +6,14 @@ const favorites = new List();
 
 //registra uma visita na lista de favoritos
 function addFavorite(visit: MyNode): void {
-    //verifica se ja esta nos favoritos
-    const existingFavorite = favorites.getAll().find((favorite) => favorite.url === visit.url);
-    if (existingFavorite) return;
+    // Verifica se já está nos favoritos
+    const existingFavorites = favorites.getAll();
+
+    for (const favorite of existingFavorites) {
+        if (favorite.url === visit.url) {
+            return;
+        }
+    }
 
     const favorite = new MyNode(visit.url, visit.title);
     favorite.icon = visit.icon;
